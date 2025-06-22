@@ -87,10 +87,10 @@ class DPSGDNode(Node):
             self.connect_neighbors()
             logging.debug("Connected to all neighbors")
 
-            to_send = self.sharing.get_data_to_send(degree=len(self.my_neighbors))
+            to_send = self.sharing.get_data_to_send(degree=len(self.send_to))
             to_send["CHANNEL"] = "DPSGD"
 
-            for neighbor in self.my_neighbors:
+            for neighbor in self.send_to:
                 self.communication.send(neighbor, to_send)
 
             while not self.received_from_all():
@@ -109,7 +109,7 @@ class DPSGDNode(Node):
                     self.peer_deques[sender].append(data)
 
             averaging_deque = dict()
-            for neighbor in self.my_neighbors:
+            for neighbor in self.wait_for:
                 averaging_deque[neighbor] = self.peer_deques[neighbor]
 
             self.sharing._averaging(averaging_deque)
@@ -336,17 +336,20 @@ class DPSGDNode(Node):
             train_evaluate_after,
             reset_optimizer,
         )
-        self.init_dataset_model(config["DATASET"])
+        self.init_dataset_model(config["DATASET"], self.device)
         self.init_optimizer(config["OPTIMIZER_PARAMS"])
-        self.init_trainer(config["TRAIN_PARAMS"])
+        self.init_trainer(config["TRAIN_PARAMS"], self.device)
         self.init_comm(config["COMMUNICATION"])
 
         self.message_queue = dict()
 
         self.barrier = set()
+        self.send_to = self.graph.outgoing_neighbors(self.uid)
+        self.wait_for = self.graph.incoming_neighbors(self.uid)
         self.my_neighbors = self.graph.neighbors(self.uid)
 
-        self.init_sharing(config["SHARING"])
+
+        self.init_sharing(config["SHARING"], self.device)
         self.peer_deques = dict()
         self.connect_neighbors()
 
@@ -360,7 +363,7 @@ class DPSGDNode(Node):
             True if required data has been received, False otherwise
 
         """
-        for k in self.my_neighbors:
+        for k in self.wait_for:
             if (
                 (k not in self.peer_deques)
                 or len(self.peer_deques[k]) == 0
@@ -437,6 +440,13 @@ class DPSGDNode(Node):
         )
         torch.set_num_threads(self.threads_per_proc)
         torch.set_num_interop_threads(1)
+
+        use_cuda = config.get("CUDA", {}).get("use_cuda", False)
+        if isinstance(use_cuda, str):
+            use_cuda = use_cuda.lower() == "true"
+
+        self.device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
+
         self.instantiate(
             rank,
             machine_id,
@@ -452,7 +462,10 @@ class DPSGDNode(Node):
             reset_optimizer,
             *args
         )
+
+        self.model.to(self.device)
+
         logging.info(
-            "Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads
+                "Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads
         )
         self.run()

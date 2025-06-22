@@ -25,7 +25,7 @@ class Regular(Graph):
         G = nx.random_regular_graph(degree, n_procs, seed)
         adj = G.adjacency()
         for i, l in adj:
-            self.adj_list[i] = set()  # new set
+            self.adj_list[i] = set()  # a_new set
             for k in l:
                 self.adj_list[i].add(k)
         if not nx.is_connected(G):

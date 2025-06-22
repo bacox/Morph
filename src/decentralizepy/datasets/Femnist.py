@@ -214,6 +214,7 @@ class Femnist(Dataset):
         test_batch_size=1024,
         validation_source="",
         validation_size="",
+        device="cpu",
     ):
         """
         Constructor which reads the data files, instantiates and partitions the dataset
@@ -262,6 +263,7 @@ class Femnist(Dataset):
         )
 
         self.num_classes = NUM_CLASSES
+        self.device = device
 
         if self.__training__:
             self.load_trainset()
@@ -395,6 +397,8 @@ class Femnist(Dataset):
             loss_val = 0.0
             count = 0
             for elems, labels in testloader:
+                elems = elems.to(self.device)
+                labels = labels.to(self.device)
                 outputs = model(elems)
                 loss_val += loss(outputs, labels).item()
                 count += 1
@@ -452,6 +456,8 @@ class Femnist(Dataset):
             loss_val = 0.0
             count = 0
             for elems, labels in validationloader:
+                elems = elems.to(self.device)
+                labels = labels.to(self.device)
                 outputs = model(elems)
                 loss_val += loss(outputs, labels).item()
                 count += 1

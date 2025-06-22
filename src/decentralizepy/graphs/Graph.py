@@ -21,6 +21,8 @@ class Graph:
         if n_procs != None:
             self.n_procs = n_procs
             self.adj_list = [set() for i in range(self.n_procs)]
+            self.out_adj_list = [set() for _ in range(self.n_procs)]
+            self.in_adj_list = [set() for _ in range(self.n_procs)]
 
     def get_all_nodes(self):
         return [i for i in range(self.n_procs)]
@@ -54,6 +56,9 @@ class Graph:
         self.adj_list[x].add(y)
         self.adj_list[y].add(x)
 
+        self.out_adj_list[x].add(y)
+        self.in_adj_list[y].add(x)
+
     def read_graph_from_file(self, file, type="edges", force_connect=False):
         """
         Reads the graph from a given file
@@ -81,7 +86,9 @@ class Graph:
 
         with open(file, "r") as inf:
             self.n_procs = int(inf.readline().strip())
-            self.adj_list = [set() for i in range(self.n_procs)]
+            self.adj_list = [set() for _ in range(self.n_procs)]
+            self.out_adj_list = [set() for _ in range(self.n_procs)]
+            self.in_adj_list = [set() for _ in range(self.n_procs)]
 
             lines = inf.readlines()
             if type == "edges":
@@ -117,9 +124,9 @@ class Graph:
         with open(file, "w") as of:
             of.write(str(self.n_procs) + "\n")
             if type == "edges":
-                for node, adj in enumerate(self.adj_list):
-                    for neighbor in adj:
-                        of.write("{} {}".format(node, neighbor) + "\n")
+                for src, neighbors in enumerate(self.out_adj_list):
+                    for dst in neighbors:
+                        of.write(f"{src} {dst}\n")
             elif type == "adjacency":
                 for adj in self.adj_list:
                     of.write(str(*adj) + "\n")
@@ -151,6 +158,14 @@ class Graph:
 
         """
         return self.adj_list[uid]
+
+    def outgoing_neighbors(self, uid):
+        """Nodes the node sends to"""
+        return self.out_adj_list[uid]
+
+    def incoming_neighbors(self, uid):
+        """Nodes that send to this node"""
+        return self.in_adj_list[uid]
 
     def centr(self):
         my_adj = {x: list(adj) for x, adj in enumerate(self.adj_list)}

@@ -25,6 +25,7 @@ class PlainAverageSharing(Sharing):
         compression_package=None,
         compression_class=None,
         float_precision=None,
+        device="cpu",
     ):
         """
         Constructor
@@ -62,6 +63,7 @@ class PlainAverageSharing(Sharing):
             compression_package,
             compression_class,
             float_precision,
+            device
         )
         self.received_this_round = 0
 
@@ -82,12 +84,12 @@ class PlainAverageSharing(Sharing):
     def _averaging(self, peer_deques):
         """
         Averages the received model with the local model
-
         """
         self.received_this_round = 0
         with torch.no_grad():
             total = dict()
             weight = 1 / (len(peer_deques) + 1)
+
             for i, n in enumerate(peer_deques):
                 self.received_this_round += 1
                 data = peer_deques[n].popleft()
@@ -95,23 +97,24 @@ class PlainAverageSharing(Sharing):
                 del data["iteration"]
                 del data["CHANNEL"]
                 logging.debug(
-                    "Averaging model from neighbor {} of iteration {}".format(
-                        n, iteration
-                    )
+                    "Averaging model from neighbor {} of iteration {}".format(n, iteration)
                 )
                 data = self.deserialized_model(data)
                 for key, value in data.items():
+                    value = value.to(self.device)
                     if key in total:
                         total[key] += value * weight
                     else:
                         total[key] = value * weight
 
             for key, value in self.model.state_dict().items():
+                value = value.to(self.device)
                 total[key] += value * weight
 
         self.model.load_state_dict(total)
         self._post_step()
         self.communication_round += 1
+
 
     def get_data_to_send(self, *args, **kwargs):
         self._pre_step()

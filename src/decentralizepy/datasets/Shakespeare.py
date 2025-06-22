@@ -191,6 +191,8 @@ class Shakespeare(Dataset):
         test_dir="",
         sizes="",
         test_batch_size=1024,
+        validation_source="",
+        validation_size="",
     ):
         """
         Constructor which reads the data files, instantiates and partitions the dataset
@@ -230,6 +232,8 @@ class Shakespeare(Dataset):
             test_dir,
             sizes,
             test_batch_size,
+            validation_source,
+            validation_size
         )
         if self.__training__:
             self.load_trainset()
@@ -237,9 +241,51 @@ class Shakespeare(Dataset):
         if self.__testing__:
             self.load_testset()
 
+        if self.__training__:
+            self.load_trainset()
+            if self.__validating__ and self.validation_source == "Train":
+                self.create_validation_from_train()
+
+
+    def create_validation_from_train(self):
+        logging.info("Creating validation set from training set.")
+        total = self.train_x.shape[0]
+        val_size = int(total * self.validation_size)
+        indices = np.arange(total)
+        np.random.seed(self.random_seed)
+        np.random.shuffle(indices)
+        val_indices = indices[:val_size]
+        train_indices = indices[val_size:]
+        self.valid_x = self.train_x[val_indices]
+        self.valid_y = self.train_y[val_indices]
+        self.train_x = self.train_x[train_indices]
+        self.train_y = self.train_y[train_indices]
+
+    def get_validationset(self):
+        if self.__validating__:
+            return DataLoader(
+                Data(self.valid_x, self.valid_y),
+                batch_size=self.test_batch_size
+            )
+        raise RuntimeError("Validation set not initialized!")
+
+    def normalize_text(self, s):
+        return (
+            s.replace("’", "'")
+            .replace("‘", "'")
+            .replace("“", '"')
+            .replace("”", '"')
+            .replace("–", "-")
+            .replace("—", "-")
+        )
+
     def process(self, x):
         output = list(
-            map(lambda sentences: list(map(lambda c: char2idx[c], list(sentences))), x)
+            map(
+                lambda sentences: list(map(lambda c: char2idx.get(c, char2idx[" "]),
+                                           list(self.normalize_text(sentences)))),
+                x
+            )
         )
         return output
 

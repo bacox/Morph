@@ -1,4 +1,5 @@
 import importlib
+import importlib
 import logging
 import math
 import os
@@ -188,7 +189,7 @@ class Node:
         logging.debug("type(graph): %s", str(type(self.rank)))
         logging.debug("type(mapping): %s", str(type(self.mapping)))
 
-    def init_dataset_model(self, dataset_configs):
+    def init_dataset_model(self, dataset_configs, device=None):
         """
         Instantiate dataset and model from config.
 
@@ -210,7 +211,7 @@ class Node:
             ["dataset_package", "dataset_class", "model_class"],
         )
         self.dataset = self.dataset_class(
-            self.rank, self.machine_id, self.mapping, **self.dataset_params
+            self.rank, self.machine_id, self.mapping, **self.dataset_params, device=device
         )
 
         logging.info("Dataset instantiation complete.")
@@ -241,7 +242,7 @@ class Node:
             self.model.parameters(), **self.optimizer_params
         )
 
-    def init_trainer(self, train_configs):
+    def init_trainer(self, train_configs, device=None):
         """
         Instantiate training module and loss from config.
 
@@ -279,7 +280,8 @@ class Node:
             self.optimizer,
             self.loss,
             self.log_dir,
-            **train_params
+            **train_params,
+            device=device
         )
 
     def init_comm(self, comm_configs):
@@ -300,7 +302,7 @@ class Node:
             self.rank, self.machine_id, self.mapping, self.graph.n_procs, **comm_params
         )
 
-    def init_sharing(self, sharing_configs):
+    def init_sharing(self, sharing_configs, device=None):
         """
         Instantiate sharing module from config.
 
@@ -324,7 +326,8 @@ class Node:
             self.model,
             self.dataset,
             self.log_dir,
-            **sharing_params
+            **sharing_params,
+            device=device
         )
 
     def instantiate(
@@ -337,7 +340,8 @@ class Node:
         iterations=1,
         log_dir=".",
         log_level=logging.INFO,
-        *args
+        *args,
+        device=None,
     ):
         """
         Construct objects.
@@ -376,9 +380,9 @@ class Node:
             iterations,
             log_dir,
         )
-        self.init_dataset_model(config["DATASET"])
+        self.init_dataset_model(config["DATASET"], device)
         self.init_optimizer(config["OPTIMIZER_PARAMS"])
-        self.init_trainer(config["TRAIN_PARAMS"])
+        self.init_trainer(config["TRAIN_PARAMS"], device)
         self.init_comm(config["COMMUNICATION"])
 
         self.message_queue = dict()
@@ -386,7 +390,7 @@ class Node:
         self.barrier = set()
         self.my_neighbors = self.graph.neighbors(self.uid)
 
-        self.init_sharing(config["SHARING"])
+        self.init_sharing(config["SHARING"], device)
 
     def run(self):
         """

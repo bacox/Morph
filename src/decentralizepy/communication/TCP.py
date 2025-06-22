@@ -2,6 +2,8 @@ import json
 import logging
 import pickle
 import socket
+import os
+import errno
 from collections import deque
 from time import sleep
 
@@ -81,7 +83,8 @@ class TCP(Communication):
         self.rank = rank
         self.machine_id = machine_id
         self.mapping = mapping
-        self.offset = offset
+        env_offset = os.getenv("PORT_OFFSET")
+        self.offset = int(env_offset) if env_offset is not None else offset
         self.recv_timeout = recv_timeout
         self.uid = mapping.get_uid(rank, machine_id)
         self.identity = str(self.uid).encode()
@@ -207,6 +210,30 @@ class TCP(Communication):
                 else:
                     raise
 
+    # def send(self, uid, data, encrypt=True):
+    #     """
+    #     Send a message to a process.
+    #
+    #     Parameters
+    #     ----------
+    #     uid : int
+    #         Neighbor's unique ID
+    #     data : dict
+    #         Message as a Python dictionary
+    #
+    #     """
+    #
+    #     if encrypt:
+    #         to_send = self.encrypt(data)
+    #     else:
+    #         to_send = data
+    #     data_size = len(to_send)
+    #     self.total_bytes += data_size
+    #     id = str(uid).encode()
+    #     self.peer_sockets[id].send(to_send)
+    #     logging.debug("{} sent the message to {}.".format(self.uid, uid))
+    #     logging.debug("Sent message size: {}".format(data_size))
+
     def send(self, uid, data, encrypt=True):
         """
         Send a message to a process.
@@ -217,7 +244,6 @@ class TCP(Communication):
             Neighbor's unique ID
         data : dict
             Message as a Python dictionary
-
         """
 
         if encrypt:
@@ -227,6 +253,14 @@ class TCP(Communication):
         data_size = len(to_send)
         self.total_bytes += data_size
         id = str(uid).encode()
-        self.peer_sockets[id].send(to_send)
-        logging.debug("{} sent the message to {}.".format(self.uid, uid))
-        logging.debug("Sent message size: {}".format(data_size))
+
+        try:
+            self.peer_sockets[id].send(to_send, flags=zmq.NOBLOCK)
+            logging.debug(f"[{self.uid}] Sent message to {uid}. Size: {data_size} bytes.")
+        except zmq.ZMQError as e:
+            if e.errno == zmq.EHOSTUNREACH:
+                logging.error(f"[{self.uid}] Failed to send to {uid} — ROUTER has no route to identity {id.decode()}. Likely not connected yet.")
+            elif e.errno == errno.EAGAIN:
+                logging.warning(f"[{self.uid}] Send to {uid} would block.")
+            else:
+                logging.exception(f"[{self.uid}] Unexpected ZMQError while sending to {uid}.")

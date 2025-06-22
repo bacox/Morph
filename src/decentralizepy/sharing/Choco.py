@@ -8,7 +8,7 @@ from decentralizepy.sharing.Sharing import Sharing
 
 def zeros_like_state_dict(state_dict):
     """
-    Creates a new state dictionary such that it has same
+    Creates a a_new state dictionary such that it has same
     layers (name and size) as the input state dictionary, but all values
     are zero
 

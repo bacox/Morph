@@ -264,7 +264,7 @@ class SubSampling(Sharing):
 
             random_generator = (
                 torch.Generator()
-            )  # new generator, such that we do not overwrite the other one
+            )  # a_new generator, such that we do not overwrite the other one
             random_generator.manual_seed(seed)
 
             shapes = []

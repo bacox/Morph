@@ -63,22 +63,21 @@ def plot_results(path, centralized, data_machine="machine0", data_node=0):
         if not folder_path.is_dir() or "weights" == folder_path.name:
             continue
         results = []
-        machine_folders = os.listdir(folder_path)
-        for machine_folder in machine_folders:
-            mf_path = os.path.join(folder_path, machine_folder)
-            if not os.path.isdir(mf_path):
-                continue
-            files = os.listdir(mf_path)
-            files = [f for f in files if f.endswith("_results.json")]
-            for f in files:
-                filepath = os.path.join(mf_path, f)
-                with open(filepath, "r") as inf:
-                    results.append(json.load(inf))
-        if folder.startswith("FL") or folder.startswith("Parameter Server"):
-            data_node = -1
-        else:
-            data_node = 0
-        with open(folder_path / data_machine / f"{data_node}_results.json", "r") as f:
+        files = os.listdir(folder_path)
+        files = [f for f in files if f.endswith("_results.json")]
+        for f in files:
+            filepath = os.path.join(folder_path, f)
+            with open(filepath, "r") as inf:
+                results.append(json.load(inf))
+
+                if folder.startswith("FL") or folder.startswith("Parameter Server"):
+                    data_node = -1
+                else:
+                    data_node = 0
+                main_path = folder_path / data_machine / f"{data_node}_results.json"
+        if not main_path.exists():
+            main_path = folder_path / f"{data_node}_results.json"
+        with open(main_path, "r") as f:
             main_data = json.load(f)
         main_data = [main_data]
 

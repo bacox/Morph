@@ -376,9 +376,9 @@ class EL_Local(Node):
             train_evaluate_after,
             reset_optimizer,
         )
-        self.init_dataset_model(config["DATASET"])
+        self.init_dataset_model(config["DATASET"], device=self.device)
         self.init_optimizer(config["OPTIMIZER_PARAMS"])
-        self.init_trainer(config["TRAIN_PARAMS"])
+        self.init_trainer(config["TRAIN_PARAMS"], device=self.device)
         self.init_comm(config["COMMUNICATION"])
 
         self.message_queue = dict()
@@ -386,7 +386,7 @@ class EL_Local(Node):
         self.barrier = set()
         self.my_neighbors = self.graph.neighbors(self.uid)
 
-        self.init_sharing(config["SHARING"])
+        self.init_sharing(config["SHARING"], device=self.device)
         self.peer_deques = dict()
         self.connect_neighbors()
 
@@ -458,6 +458,9 @@ class EL_Local(Node):
         )
         torch.set_num_threads(self.threads_per_proc)
         torch.set_num_interop_threads(1)
+        cuda_enabled = config.get("CUDA", {}).get("use_cuda", False)
+        self.device = torch.device("cuda" if cuda_enabled and torch.cuda.is_available() else "cpu")
+
         self.instantiate(
             rank,
             machine_id,
@@ -478,6 +481,8 @@ class EL_Local(Node):
         self.degree = (
             nodeConfigs["graph_degree"] if "graph_degree" in nodeConfigs else 2
         )
+
+        self.model.to(self.device)
 
         logging.info(
             "Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads

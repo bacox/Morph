@@ -6,9 +6,9 @@ run_path=../../eval/data # Path to the folder where the graph and config file wi
 config_file=config_EL.ini
 cp $graph $config_file $run_path
 
-env_python=~/miniconda3/envs/decpy/bin/python3 # Path to python executable of the environment | conda recommended
+env_python=python # Path to python executable of the environment | conda recommended
 machines=1 # number of machines in the runtime
-iterations=80
+iterations=8000
 test_after=20
 eval_file=testingEL_Local.py # decentralized driver code (run on each machine)
 log_level=INFO # DEBUG | INFO | WARN | CRITICAL

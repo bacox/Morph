@@ -24,6 +24,7 @@ class Training:
         full_epochs="",
         batch_size="",
         shuffle="",
+        device=None,
     ):
         """
         Constructor
@@ -65,15 +66,16 @@ class Training:
         self.full_epochs = utils.conditional_value(full_epochs, "", False)
         self.batch_size = utils.conditional_value(batch_size, "", int(1))
         self.shuffle = utils.conditional_value(shuffle, "", False)
+        self.device = device
 
     def reset_optimizer(self, optimizer):
         """
-        Replace the current optimizer with a new one
+        Replace the current optimizer with a a_new one
 
         Parameters
         ----------
         optimizer : torch.optim
-            A new optimizer
+            A a_new optimizer
 
         """
         self.optimizer = optimizer
@@ -93,6 +95,10 @@ class Training:
         count = 0
         with torch.no_grad():
             for data, target in trainset:
+
+                data = data.to(self.device)
+                target = target.to(self.device)
+
                 output = self.model(data)
                 loss_val = self.loss(output, target)
                 epoch_loss += loss_val.item()
@@ -100,6 +106,74 @@ class Training:
         loss = epoch_loss / count
         logging.info("Loss after iteration: {}".format(loss))
         return loss
+
+    def eval_loss_from_loader(self, loader):
+        """
+        Evaluate the loss on a given DataLoader (e.g., for validation or test).
+
+        Parameters
+        ----------
+        loader : torch.utils.data.DataLoader
+            A DataLoader providing batches of (data, target) tuples.
+
+        Returns
+        -------
+        float
+            Average loss over the entire loader.
+        """
+        self.model.eval()
+        epoch_loss = 0.0
+        count = 0
+        with torch.no_grad():
+            for data, target in loader:
+
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                output = self.model(data)
+                loss_val = self.loss(output, target)
+                epoch_loss += loss_val.item()
+                count += 1
+        loss = epoch_loss / count if count > 0 else float("inf")
+        logging.info("Validation loss after iteration: {}".format(loss))
+        return loss
+
+
+    def eval_loss_and_accuracy_from_loader(self, loader):
+        """
+        Evaluate both loss and accuracy on a given DataLoader.
+
+        Parameters
+        ----------
+        loader : torch.utils.data.DataLoader
+
+        Returns
+        -------
+        tuple(float, float)
+            (average loss, accuracy)
+        """
+        self.model.eval()
+        total_loss = 0.0
+        total_correct = 0
+        total_samples = 0
+        with torch.no_grad():
+            for data, target in loader:
+                data = data.to(self.device)
+                target = target.to(self.device)
+
+                output = self.model(data)
+                loss_val = self.loss(output, target)
+                total_loss += loss_val.item()
+
+                pred = output.argmax(dim=1)
+                total_correct += (pred == target).sum().item()
+                total_samples += target.size(0)
+
+        avg_loss = total_loss / len(loader) if len(loader) > 0 else float("inf")
+        accuracy = total_correct / total_samples if total_samples > 0 else 0.0
+
+        logging.info(f"Eval — Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}")
+        return avg_loss, accuracy
 
     def trainstep(self, data, target):
         """
@@ -119,6 +193,10 @@ class Training:
 
         """
         self.model.zero_grad()
+
+        data = data.to(self.device)
+        target = target.to(self.device)
+
         output = self.model(data)
         loss_val = self.loss(output, target)
         loss_val.backward()
