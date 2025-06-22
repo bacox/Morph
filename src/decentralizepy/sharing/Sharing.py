@@ -24,6 +24,7 @@ class Sharing:
         compression_package=None,
         compression_class=None,
         float_precision=None,
+        device="cpu",
     ):
         """
         Constructor
@@ -58,6 +59,7 @@ class Sharing:
         self.dataset = dataset
         self.communication_round = 0
         self.log_dir = log_dir
+        self.device = device
 
         self.shapes = []
         self.lens = []
@@ -107,7 +109,9 @@ class Sharing:
                 to_cat.append(t)
         flat = torch.cat(to_cat)
         data = dict()
-        data["params"] = flat.numpy()
+
+        data["params"] = flat.cpu().numpy()
+
         logging.debug("Model sending this round: {}".format(data["params"]))
         return self.compress_data(data)
 
@@ -134,7 +138,7 @@ class Sharing:
             end_index = start_index + self.lens[i]
             state_dict[key] = torch.from_numpy(
                 T[start_index:end_index].reshape(self.shapes[i])
-            )
+            ).to(self.device)
             start_index = end_index
 
         return state_dict
@@ -183,7 +187,11 @@ class Sharing:
                         total[key] = value * weight
 
             for key, value in self.model.state_dict().items():
-                total[key] += (1 - weight_total) * value  # Metro-Hastings
+                value = value.to(self.device)
+                if key in total:
+                    total[key] += (1 - weight_total) * value
+                else:
+                    total[key] = (1 - weight_total) * value
 
         self.model.load_state_dict(total)
         self._post_step()

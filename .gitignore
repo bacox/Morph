@@ -9,6 +9,9 @@
 **.egg-info
 202**
 eval/data**
+eval/graphs**
 **/massif.out*
 *swp
 build
+venv
+interp

@@ -1,160 +1,227 @@
-.. image:: https://upload.wikimedia.org/wikipedia/commons/f/f4/Logo_EPFL.svg
-   :alt: EPFL logo
-   :width: 75px
-   :align: right
+DissDL: Decentralized Learning with Dissimilarity-Driven Peer Selection
+========================================================================
 
-==============
-decentralizepy
-==============
+This repository contains code for a decentralized learning framework where nodes adaptively select peers based on model and data dissimilarity. The project includes infrastructure for training, evaluating, and analyzing behavior across various topologies and datasets.
 
-decentralizepy is a framework for running distributed applications (particularly ML) on top of arbitrary topologies (decentralized, federated, parameter server).
-It was primarily conceived for assessing scientific ideas on several aspects of distributed learning (communication efficiency, privacy, data heterogeneity etc.).
+Setup
+-----
 
--------------------------
-Setting up decentralizepy
--------------------------
+- Fork the repository.
+- Clone and enter your local repository.
+- Check if you have Python >= 3.8:
 
-* Fork the repository.
-* Clone and enter your local repository.
-* Check if you have ``python>=3.8``. ::
+  .. code-block:: bash
 
-    python --version
+     python --version
 
-* (Optional) Create and activate a virtual environment. ::
-  
-    python3 -m venv [venv-name]
-    source [venv-name]/bin/activate
+- (Optional) Create and activate a virtual environment:
 
-* Update pip. ::
+  .. code-block:: bash
 
-    pip3 install --upgrade pip
-    pip install --upgrade pip
+     python3 -m venv [venv-name]
+     source [venv-name]/bin/activate
 
-* On Mac M1, installing ``pyzmq`` fails with `pip`. Use `conda <https://conda.io>`_.
-* Install decentralizepy for development. (zsh) ::
+- Upgrade pip:
 
-    pip3 install --editable .\[dev\]
-    
-* Install decentralizepy for development. (bash) ::
+  .. code-block:: bash
 
-    pip3 install --editable .[dev]
+     pip3 install --upgrade pip
 
-* Download CIFAR-10 using ``download_dataset.py``. ::
+- On Mac M1, ``pyzmq`` may fail with pip — install it via conda: https://conda.io
+- Install decentralizepy in development mode:
 
-    python download_dataset.py
+  .. code-block:: bash
 
-* (Optional) Download other datasets from LEAF <https://github.com/TalwalkarLab/leaf> and place them in ``eval/data/``.
- 
-----------------
-Running the code
-----------------
+     # zsh
+     pip3 install --editable .\[dev\]
 
-* Follow the tutorial in ``tutorial/``. OR,
-* Generate a new graph file with the required topology using ``generate_graph.py``. ::
+     # bash
+     pip3 install --editable .[dev]
 
-    python generate_graph.py --help
+- Install psutil::
 
-* Choose and modify one of the config files in ``eval/{step,epoch}_configs``.
-* Modify the dataset paths and ``addresses_filepath`` in the config file.
-* In eval/run.sh, modify arguments as required.
-* Execute eval/run.sh on all the machines simultaneously. There is a synchronization barrier mechanism at the start so that all processes start training together.
+    pip3 install psutil
 
-------
-Citing
-------
+- Download CIFAR-10:
 
-Cite us as ::
+  .. code-block:: bash
 
-    @inproceedings{decentralizepy,
-   author = {Dhasade, Akash and Kermarrec, Anne-Marie and Pires, Rafael and Sharma, Rishi and Vujasinovic, Milos},
-   title = {Decentralized Learning Made Easy with DecentralizePy},
-   year = {2023},
-   isbn = {9798400700842},
-   publisher = {Association for Computing Machinery},
-   address = {New York, NY, USA},
-   url = {https://doi.org/10.1145/3578356.3592587},
-   doi = {10.1145/3578356.3592587},
-   booktitle = {Proceedings of the 3rd Workshop on Machine Learning and Systems},
-   pages = {34–41},
-   numpages = {8},
-   keywords = {peer-to-peer, distributed systems, machine learning, middleware, decentralized learning, network topology},
-   location = {Rome, Italy},
-   series = {EuroMLSys '23}
-   }
+     python download_dataset.py
 
--------------------------
-Built with DecentralizePy
--------------------------
+- Download FEMNIST from the `LEAF repository <https://github.com/TalwalkarLab/leaf>`_ and place it in:
 
-.. _`Epidemic Learning`: https://arxiv.org/abs/2310.01972/
+  .. code-block:: bash
 
-`Epidemic Learning`_
---------------------
+     eval/data/femnist/
 
-Tutorial
-    ``tutorial/EpidemicLearning``
-Source files
-    ``src/node/EpidemicLearning/``
-Cite
-    ``Martijn de Vos, Sadegh Farhadkhani, Rachid Guerraoui, Anne-Marie Kermarrec, Rafael Pires, and Rishi Sharma. Epidemic Learning: Boosting Decentralized Learning with Randomized Communication. In Thirty-seventh Conference on Neural Information Processing Systems (NeurIPS), 2023.``
+Directory Structure
+-------------------
 
-.. _`Get More for Less in Decentralized Learning Systems`: https://ieeexplore.ieee.org/document/10272515/
+.. code-block:: text
 
-`Get More for Less in Decentralized Learning Systems`_
-------------------------------------------------------
+   src/decentralizepy/nodes/DissDL/
+   ├── DissDL.py                  # Main training algorithm
+   ├── GlobalModelSimilarity.py   # Computes cosine similarity to global model
+   ├── GlobalDataSimilarity.py    # Tracks similarity to global data distribution
 
-Tutorial
-    ``tutorial/JWINS``
-Source files
-    ``src/sharing/JWINS/``
-Cite
-    ``Akash Dhasade, Anne-Marie Kermarrec, Rafael Pires, Rishi Sharma, Jeffrey Wigger, and Milos Vujasinovic. Get More for Less in Decentralized Learning Systems. In IEEE 43rd International Conference on Distributed Computing Systems (ICDCS), 2023.``
+   tutorial/DissDL/
+   ├── run.sh                     # Entry point for all experiments
+   ├── config.ini                 # CIFAR-10 configuration
+   ├── config_fem.ini             # FEMNIST configuration
+   ├── testingDissDL.py           # Switches between algorithm/experiment types
 
+   StaticTopologies/              # Static baselines (same structure as DissDL)
+   EpidemicLearning/              # EL-Local implementation (same structure)
 
-------------
-Contributing
-------------
+   data/experiments/
+   ├── cifar/
+   │   ├── degree_3/
+   │   │   ├── diss_dl/
+   │   │   ├── static_mh/
+   │   │   ├── epidemic/
+   │   │   └── fully_connected/
+   │   └── degree_7/
+   │       ├── diss_dl/
+   │       ├── static_mh/
+   │       ├── epidemic/
+   │       └── fully_connected/
+   ├── femnist/
+   │   └── degree_3/
+   │       ├── diss_dl/
+   │       ├── static_mh/
+   │       ├── epidemic/
+   │       └── fully_connected/
+   ├── similarity/
+   │   ├── model/
+   │   │   ├── cifar_3/
+   │   │   └── cifar_7/
+   │   └── data_distribution/
+   │       ├── cifar_3/
+   │       └── cifar_7/
 
-* ``isort`` and ``black`` are installed along with the package for code linting.
-* While in the root directory of the repository, before committing the changes, please run ::
-
-    black .
-    isort .
-
--------
-Modules
--------
-
-Following are the modules of decentralizepy:
-
-Node
-----
-* The Manager. Optimizations at process level.
-
-Dataset
--------
-* Static
-
-Training
+Datasets
 --------
-* Heterogeneity. How much do I want to work?
 
-Graph
------
-* Static. Who are my neighbours? Topologies.
+- **CIFAR-10**  
+  Used in topologies of degree 3 and 7.
 
-Mapping
--------
-* Naming. The globally unique ids of the ``processes <-> machine_id, local_rank``
+- **FEMNIST**  
+  Partitioned across users; obtained from the `LEAF benchmark <https://github.com/TalwalkarLab/leaf>`_.
 
-Sharing
--------
-* Leverage Redundancy. Privacy. Optimizations in model and data sharing.
-
-Communication
+Configuration
 -------------
-* IPC/Network level. Compression. Privacy. Reliability
 
-Model
------
-* Learning Model
+Config files specify experiment parameters:
+
+- ``config.ini``: for CIFAR-10
+- ``config_fem.ini``: for FEMNIST
+
+You can modify:
+
+- Topology degree
+- Random seed
+- Algorithm (via file in ``testingDissDL.py``)
+- Training parameters (e.g., batch size, learning rate)
+
+Running Experiments
+-------------------
+
+Navigate to the experiment directory and run:
+
+.. code-block:: bash
+
+   cd tutorial/DissDL
+   ./run.sh
+
+Inside ``run.sh``, you can:
+
+- Change the **graph topology**
+- Choose the **configuration** (FEMNIST or CIFAR-10)
+- Select the algorithm/experiment via ``testingDissDL.py``:
+
+  - ``DissDL.py`` – standard training
+  - ``GlobalModelSimilarity.py`` – model similarity
+  - ``GlobalDataSimilarity.py`` – data distribution similarity
+
+Experimental Types
+------------------
+
+1. **Main Algorithm Evaluation**
+
+   Evaluates algorithm performance across topologies and seeds.
+
+   .. code-block:: text
+
+      data/experiments/{dataset}/{degree}/{algorithm}/run_{n}/
+
+2. **Similarity Experiments**
+
+   - **Global Model Similarity**: Tracks cosine similarity between local and global models over time.
+   - **Global Data Distribution Similarity**: Tracks how closely a node's aggregated data approximates the true global distribution.
+
+   .. code-block:: text
+
+      data/experiments/similarity/{experiment_type}/{dataset}/run_{n}/
+
+   where ``{experiment_type}`` is either ``model`` or ``data_distribution``.
+
+Results & Plotting
+------------------
+
+The ``eval/`` directory contains scripts for aggregating results and generating plots.
+
+1. **Main Algorithm Evaluation**
+
+   - ``evaluation.py``: Aggregates metrics from multiple runs into a CSV summary file.
+     
+     Folder path can be modified near the bottom of the script to point to a specific experiment:
+     
+     .. code-block:: text
+
+        data/experiments/{dataset}/{degree}/{algorithm}
+
+   - ``plot_inter_run_cifar.py`` / ``plot_inter_run_femnist.py``: 
+     Plot test accuracy, loss, inter-node variance, and communication cost over time.
+
+     Update the input folder path at the top of the script to switch experiments.
+
+2. **Similarity Experiments**
+
+   - ``plot_model_similarity.py``: 
+     Visualizes how cosine similarity between each node’s model and the global model evolves through rounds.
+
+   - ``plot_data_similarity.py``: 
+     Visualizes how closely each node’s aggregated data distribution matches the global data distribution.
+
+   In both cases, set the appropriate folder at the bottom of the script:
+
+   .. code-block:: text
+
+      data/experiments/similarity/{experiment_type}/{dataset}
+
+   where ``{experiment_type}`` is either ``model`` or ``data_distribution``.
+
+
+Reproducing Evaluation Results
+------------------------------
+
+To reproduce the evaluation plots, you can download the folder containing all experiment outputs (with the correct directory structure) from the following link:
+
+    https://tud365-my.sharepoint.com/personal/bartcox_tudelft_nl/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fbartcox%5Ftudelft%5Fnl%2FDocuments%2FCSE3000%20%2D%202025%20Data%2FAntreas%20Ioannou
+
+Once downloaded, unzip the contents and place them inside the ``eval/data`` directory. This will ensure compatibility with the provided evaluation scripts.
+
+
+Enabling GPU Usage
+==================
+
+To enable GPU acceleration, add the following to your configuration file (by default it is false):
+
+.. code-block:: ini
+
+    [CUDA]
+    use_cuda = true
+
+Make sure your system has a compatible CUDA-enabled GPU and that ``torch.cuda.is_available()`` returns ``True``.
+
+This setting ensures the model and training tensors are moved to the GPU when available.

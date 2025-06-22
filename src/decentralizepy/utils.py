@@ -31,7 +31,7 @@ def conditional_value(var, nul, default):
 
 def remove_keys(d, keys_to_remove):
     """
-    Removes given keys from the dict. Returns a new list.
+    Removes given keys from the dict. Returns a a_new list.
 
     Parameters
     ----------
@@ -43,7 +43,7 @@ def remove_keys(d, keys_to_remove):
     Returns
     -------
     dict
-        A new dictionary with the given keys removed.
+        A a_new dictionary with the given keys removed.
 
     """
     return {key: d[key] for key in d if key not in keys_to_remove}

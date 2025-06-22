@@ -36,13 +36,13 @@ class CIFAR10(Dataset):
             root=self.train_dir, train=True, download=True, transform=self.transform
         )
 
-        if self.__validating__ and self.validation_source == "Train":
-            logging.info("Extracting the validation set from the train set.")
-            self.validationset, trainset = torch.utils.data.random_split(
-                trainset,
-                [self.validation_size, 1 - self.validation_size],
-                torch.Generator().manual_seed(self.random_seed),
-            )
+        # if self.__validating__ and self.validation_source == "Train":
+        #     logging.info("Extracting the validation set from the train set.")
+        #     self.validationset, trainset = torch.utils.data.random_split(
+        #         trainset,
+        #         [self.validation_size, 1 - self.validation_size],
+        #         torch.Generator().manual_seed(self.random_seed),
+        #     )
 
         c_len = len(trainset)
 
@@ -91,6 +91,14 @@ class CIFAR10(Dataset):
                 "Partitioning method {} not implemented".format(self.partition_niid)
             )
 
+        if self.__validating__ and self.validation_source == "Train":
+            logging.info("Extracting the validation set from the partitioned train set.")
+            self.validationset, self.trainset = torch.utils.data.random_split(
+                self.trainset,
+                [self.validation_size, 1 - self.validation_size],
+                torch.Generator().manual_seed(self.random_seed),
+            )
+
     def load_testset(self):
         """
         Loads the testing set.
@@ -126,6 +134,7 @@ class CIFAR10(Dataset):
         shards=1,
         validation_source="",
         validation_size="",
+        device="cpu",
     ):
         """
         Constructor which reads the data files, instantiates and partitions the dataset
@@ -183,6 +192,7 @@ class CIFAR10(Dataset):
         self.partition_niid = partition_niid
         self.alpha = alpha
         self.shards = shards
+        self.device = device
         self.transform = transforms.Compose(
             [
                 transforms.ToTensor(),
@@ -286,6 +296,10 @@ class CIFAR10(Dataset):
             loss_val = 0.0
             count = 0
             for elems, labels in testloader:
+
+                elems = elems.to(self.device)
+                labels = labels.to(self.device)
+
                 outputs = model(elems)
                 loss_val += loss(outputs, labels).item()
                 count += 1
@@ -343,6 +357,10 @@ class CIFAR10(Dataset):
             loss_val = 0.0
             count = 0
             for elems, labels in validationloader:
+
+                elems = elems.to(self.device)
+                labels = labels.to(self.device)
+
                 outputs = model(elems)
                 loss_val += loss(outputs, labels).item()
                 count += 1
