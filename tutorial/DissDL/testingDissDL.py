@@ -8,7 +8,9 @@ from torch import multiprocessing as mp
 from decentralizepy import utils
 from decentralizepy.graphs.Graph import Graph
 from decentralizepy.mappings.Linear import Linear
-from decentralizepy.node.DissDL.DissDL import DissDL
+from decentralizepy.node.DissDL.DissDL import DissDL as BaseLine
+from decentralizepy.node.DissDL.GlobalDataSimilarity import DissDL as GDS
+from decentralizepy.node.DissDL.GlobalModelSimilarity import DissDL as GMS
 
 
 def read_ini(file_path):
@@ -43,6 +45,19 @@ if __name__ == "__main__":
     copy(args.graph_file, args.log_dir)
     utils.write_args(args, args.log_dir)
 
+    alg_name = my_config["ALGORITHM"]["name"]
+    print(f"Algorithm: {alg_name}")
+
+    # Match the algorithm name to the target class
+    target_mapping = {
+        "Baseline": BaseLine,
+        "GDS": GDS,
+        "GMS": GMS,
+    }
+    target_class = target_mapping.get(alg_name)
+    if target_class is None:
+        raise ValueError(f"Unknown algorithm name: {alg_name}. Supported algorithms: {list(target_mapping.keys())}")
+    print(f"Using target class: {target_class}")
     g = Graph()
     g.read_graph_from_file(args.graph_file, args.graph_type)
     n_machines = args.machines
@@ -55,7 +70,7 @@ if __name__ == "__main__":
     for r in range(procs_per_machine):
         processes.append(
             mp.Process(
-                target=DissDL,
+                target=target_class,
                 args=[
                     r,
                     m_id,
