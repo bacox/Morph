@@ -11,6 +11,7 @@
 eval/data**
 eval/graphs**
 **/massif.out*
+*nohup_exec.txt
 *swp
 build
 venv
