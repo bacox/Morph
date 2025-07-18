@@ -24,7 +24,7 @@ import networkx as nx
 
 
 TMP_DIR = "./tmp/eval_weights"
-TOTAL_NODES = 16
+TOTAL_NODES = 100
 
 def wait_for_files(prefix, count, timeout=60):
     start = time.time()
