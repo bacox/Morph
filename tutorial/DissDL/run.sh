@@ -19,7 +19,8 @@ if [ "$#" -lt 1 ]; then
 fi
 
 decpy_path=../../eval
-graph=regular_100_3.edges
+# graph=regular_100_3.edges
+graph=fully-connected_100.edges
 procs_per_machine=100
 run_path=../../eval/data
 env_python=python

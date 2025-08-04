@@ -21,3 +21,5 @@ class FullyConnected(Graph):
         for node in range(n_procs):
             neighbors = set([x for x in range(n_procs) if x != node])
             self.adj_list[node] = neighbors
+            for neighbor in neighbors:
+                self.__insert_edge__(node, neighbor)

@@ -11,7 +11,8 @@ if [[ "$1" == prefix=* ]]; then
 fi
 
 decpy_path=../../eval # Path to eval folder
-graph=regular_100_3.edges # Absolute path of the graph file generated using the generate_graph.py script
+# graph=regular_100_3.edges # Absolute path of the graph file generated using the generate_graph.py script
+graph=fully-connected_100.edges
 run_path=../../eval/data # Path to the folder where the graph and config file will be copied and the results will be stored
 config_file=config_static.ini
 cp $graph $config_file $run_path
