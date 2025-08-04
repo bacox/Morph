@@ -123,12 +123,16 @@ class Graph:
         """
         with open(file, "w") as of:
             of.write(str(self.n_procs) + "\n")
+            print(f"Writing graph to {file} in {type} format")
+            print(f"Type is {type}")
             if type == "edges":
                 for src, neighbors in enumerate(self.out_adj_list):
+                    print(f"Writing edges for node {src} with neighbors {neighbors}")
                     for dst in neighbors:
                         of.write(f"{src} {dst}\n")
             elif type == "adjacency":
                 for adj in self.adj_list:
+                    print(f"Writing adjacency for node with neighbors {adj}")
                     of.write(str(*adj) + "\n")
             else:
                 raise ValueError("type must be from {edges, adjacency}!")
@@ -141,6 +145,8 @@ class Graph:
         for node in range(self.n_procs):
             self.adj_list[node].add((node + 1) % self.n_procs)
             self.adj_list[node].add((node - 1) % self.n_procs)
+            self.__insert_edge__(node, (node + 1) % self.n_procs)
+            self.__insert_edge__(node, (node - 1) % self.n_procs)
 
     def neighbors(self, uid):
         """

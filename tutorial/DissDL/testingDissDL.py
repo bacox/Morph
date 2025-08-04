@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-
+    print(f"Path to config file: {args.config_file}")
     config = read_ini(args.config_file)
     my_config = dict()
     for section in config:

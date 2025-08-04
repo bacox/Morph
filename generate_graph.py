@@ -1,6 +1,8 @@
 import getopt
 import sys
 
+
+from decentralizepy.graphs import Graph
 from decentralizepy.graphs.FullyConnected import FullyConnected
 from decentralizepy.graphs.Regular import Regular
 from decentralizepy.graphs.Ring import Ring
@@ -100,7 +102,10 @@ if __name__ == "__main__":
             g = Star(num_nodes)
         else:
             raise ValueError("Invalid graph type: " + graph_type)
-
+        assert isinstance(g, Graph), f"Graph type {graph_type} did not return a valid Graph object: type(g)={type(g)}"
+        print("Generating graph of type:", graph_type)
+        # print(f"Graph has {g.number_of_nodes()} nodes and {g.number_of_edges()} edges.")
+        print(f"Graph= {g}")
         if file_name is not None:
             g.write_graph_to_file(file_name, type=type_adjacency)
         else:

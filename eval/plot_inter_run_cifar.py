@@ -11,20 +11,27 @@ plot_over_time = False
 # Change folder for different experiment or set export_as_pdf to False for exporting in png
 export_as_pdf = True
 base_dir = Path("data/experiments/cifar/degree_3")
+base_dir = Path("../eval_remote/st1/data/nca/CIFAR10/regular_100_3")
 
+# style_map = {
+#     "diss_dl": {"label": "DissDL", "color": "#d62728", "linestyle": "-"},
+#     "epidemic": {"label": "EL-Local", "color": "#004D4D", "linestyle": "--"},
+#     "fully_connected": {"label": "Fully Connected", "color": "#ff7f0e", "linestyle": "-."},
+#     "static_mh": {"label": "Static MH", "color": "#1f77b4", "linestyle": ":"},
+# }
+
+# algs = 'gms', 'gds', 'EL', 'static'
 style_map = {
-    "diss_dl": {"label": "DissDL", "color": "#d62728", "linestyle": "-"},
-    "epidemic": {"label": "EL-Local", "color": "#004D4D", "linestyle": "--"},
-    "fully_connected": {"label": "Fully Connected", "color": "#ff7f0e", "linestyle": "-."},
-    "static_mh": {"label": "Static MH", "color": "#1f77b4", "linestyle": ":"},
+    "gms": {"label": "GMS", "color": "#d62728", "linestyle": "-"},
+    "gds": {"label": "GDS", "color": "#004D4D", "linestyle": "--"},
+    "EL": {"label": "EL-Local", "color": "#ff7f0e", "linestyle": "-."},
+    "static": {"label": "Static MH", "color": "#1f77b4", "linestyle": ":"},
 }
 
-name_map = {
-    "diss_dl": 'DissDL',
-    "epidemic": 'EL-Local',
-    "fully_connected": 'Fully Connected',
-    "static_mh": 'Static MH'
-}
+# name_map = {"diss_dl": "DissDL", "epidemic": "EL-Local", "fully_connected": "Fully Connected", "static_mh": "Static MH"}
+# name_map = {"diss_dl": "DissDL", "epidemic": "EL-Local", "fully_connected": "Fully Connected", "static_mh": "Static MH"}
+name_map = {"gms": "GMS", "gds": "GDS", "EL": "EL-Local", "static": "Static MH"}
+
 
 def interpolate_round_metrics_to_time(mean_dict, std_dict, time_mapping):
     times = []
@@ -37,13 +44,15 @@ def interpolate_round_metrics_to_time(mean_dict, std_dict, time_mapping):
             stds.append(std_dict[r])
     return np.array(times), np.array(means), np.array(stds)
 
+
 def load_run_metrics(result_file):
     with result_file.open("r") as f:
         return json.load(f)
 
+
 def aggregate_algorithm_runs(algorithm_folder):
     all_runs = []
-    for run_folder in algorithm_folder.glob("run_*/machine0"):
+    for run_folder in algorithm_folder.glob("2025-*/machine0"):
         run_data = defaultdict(lambda: defaultdict(dict))
         result_files = list(run_folder.glob("*_results.json"))
         if not result_files:
@@ -56,6 +65,7 @@ def aggregate_algorithm_runs(algorithm_folder):
                     run_data[metric][int(round_str)][node_id] = value
         all_runs.append(run_data)
     return all_runs
+
 
 def compute_mean_std_across_runs(run_metrics_list, metric_name):
     round_values = defaultdict(list)
@@ -73,6 +83,7 @@ def compute_mean_std_across_runs(run_metrics_list, metric_name):
     std = {r: np.std(vals) for r, vals in round_values.items()}
     return mean, std
 
+
 def compute_stability(run_metrics_list, metric_name):
     round_variances = defaultdict(list)
     for run_metrics in run_metrics_list:
@@ -86,11 +97,13 @@ def compute_stability(run_metrics_list, metric_name):
     stability = {r: np.mean(vars) for r, vars in round_variances.items()}
     return stability
 
+
 def format_round_ticks(ax, fontsize):
     ticks = ax.get_xticks()
     ticks = [t for t in ticks if t >= 0]
     ax.set_xticks(ticks)
-    ax.set_xticklabels([f"{int(t)//1000}" for t in ticks], fontsize=fontsize, weight='bold')
+    ax.set_xticklabels([f"{int(t)//1000}" for t in ticks], fontsize=fontsize, weight="bold")
+
 
 def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_time, export_as_pdf):
     plt.figure(figsize=(8, 6))
@@ -116,13 +129,13 @@ def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_
         plt.fill_between(x_vals, means - stds, means + stds, color=color, alpha=0.2)
 
     if xlabel == "Communication Rounds":
-        plt.xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight='bold')
+        plt.xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight="bold")
         format_round_ticks(plt.gca(), font_size)
     else:
-        plt.xlabel(xlabel, fontsize=font_size, weight='bold')
+        plt.xlabel(xlabel, fontsize=font_size, weight="bold")
 
-    plt.ylabel(metric_name.replace("_", " ").title(), fontsize=font_size, weight='bold')
-    plt.title(f"{metric_name.replace('_', ' ').title()} (Mean ± Std)", fontsize=font_size + 2, weight='bold')
+    plt.ylabel(metric_name.replace("_", " ").title(), fontsize=font_size, weight="bold")
+    plt.title(f"{metric_name.replace('_', ' ').title()} (Mean ± Std)", fontsize=font_size + 2, weight="bold")
     plt.legend(fontsize=font_size - 6)
     plt.grid(True, color="#cccccc", linewidth=0.8)
     plt.tight_layout(pad=3)
@@ -130,7 +143,7 @@ def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_
 
     fname = f"{metric_name}_time" if plot_over_time else metric_name
     ext = ".pdf" if export_as_pdf else ".png"
-    plt.savefig(output_path / f"{fname}{ext}", bbox_inches='tight')
+    plt.savefig(output_path / f"{fname}{ext}", bbox_inches="tight")
     plt.close()
 
 
@@ -142,19 +155,20 @@ def plot_stability(stability_data, output_path, export_as_pdf):
         rounds = sorted(stability.keys())
         values = [stability[r] for r in rounds]
         config = style_map.get(label, {"label": label, "color": "gray", "linestyle": "-"})
-        ax.plot(rounds, values, label=config["label"], color=config["color"],
-                linestyle=config["linestyle"], linewidth=2.5)
+        ax.plot(
+            rounds, values, label=config["label"], color=config["color"], linestyle=config["linestyle"], linewidth=2.5
+        )
 
-    ax.set_xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight='bold')
+    ax.set_xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight="bold")
     format_round_ticks(ax, font_size)
-    ax.set_ylabel("Inter-node Variance", fontsize=font_size, weight='bold')
-    ax.set_title("Stability (Average Inter-node Variance)", fontsize=font_size + 2, weight='bold')
+    ax.set_ylabel("Inter-node Variance", fontsize=font_size, weight="bold")
+    ax.set_title("Stability (Average Inter-node Variance)", fontsize=font_size + 2, weight="bold")
     ax.legend(fontsize=font_size - 6)
     ax.grid(True, color="#cccccc", linewidth=0.8)
     ax.tick_params(labelsize=font_size - 6, width=2)
     plt.tight_layout(pad=3)
     ext = ".pdf" if export_as_pdf else ".png"
-    plt.savefig(output_path / f"stability{ext}", bbox_inches='tight')
+    plt.savefig(output_path / f"stability{ext}", bbox_inches="tight")
     plt.close()
 
 
@@ -182,35 +196,27 @@ def plot_bytes(metric_data, output_path, time_mappings, plot_over_time, export_a
         plt.fill_between(x_vals, means - stds, means + stds, color=color, alpha=0.2)
 
     if xlabel == "Communication Rounds":
-        plt.xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight='bold')
+        plt.xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight="bold")
         format_round_ticks(plt.gca(), font_size)
     else:
-        plt.xlabel(xlabel, fontsize=font_size, weight='bold')
+        plt.xlabel(xlabel, fontsize=font_size, weight="bold")
 
-    plt.ylabel("Bytes Sent", fontsize=font_size, weight='bold')
-    plt.title("Mean Communication Cost", fontsize=font_size + 2, weight='bold')
+    plt.ylabel("Bytes Sent", fontsize=font_size, weight="bold")
+    plt.title("Mean Communication Cost", fontsize=font_size + 2, weight="bold")
     plt.legend(fontsize=font_size - 6)
     plt.grid(True, color="#cccccc", linewidth=0.8)
     plt.tight_layout()
     plt.tick_params(labelsize=font_size - 6, width=2)
 
     ext = ".pdf" if export_as_pdf else ".png"
-    plt.savefig(output_path / f"communication_cost{ext}", bbox_inches='tight')
+    plt.savefig(output_path / f"communication_cost{ext}", bbox_inches="tight")
     plt.close()
 
 
 def plot_combined_metrics(metric_data, stability_data, output_path, time_mappings, plot_over_time, export_as_pdf):
     fig, axes = plt.subplots(1, 3, figsize=(30, 8))  # Removed 4th plot
-    titles = {
-        "test_acc": "Test Accuracy",
-        "test_loss": "Test Loss",
-        "stability": "Inter-node Variance"
-    }
-    ylabels = {
-        "test_acc": "Accuracy",
-        "test_loss": "Loss",
-        "stability": "Variance"
-    }
+    titles = {"test_acc": "Test Accuracy", "test_loss": "Test Loss", "stability": "Inter-node Variance"}
+    ylabels = {"test_acc": "Accuracy", "test_loss": "Loss", "stability": "Variance"}
     font_size = 28
     for idx, (metric, ax) in enumerate(zip(["test_acc", "test_loss", "stability"], axes.flat)):
         if metric == "stability":
@@ -218,8 +224,14 @@ def plot_combined_metrics(metric_data, stability_data, output_path, time_mapping
                 config = style_map.get(label, {"label": label, "color": "gray", "linestyle": "-"})
                 rounds = sorted(stability.keys())
                 values = [stability[r] for r in rounds]
-                ax.plot(rounds, values, label=config["label"], color=config["color"],
-                        linestyle=config["linestyle"], linewidth=2.5)
+                ax.plot(
+                    rounds,
+                    values,
+                    label=config["label"],
+                    color=config["color"],
+                    linestyle=config["linestyle"],
+                    linewidth=2.5,
+                )
             xlabel = "Communication Rounds"
         else:
             for label, (mean_dict, std_dict) in metric_data[metric].items():
@@ -241,22 +253,21 @@ def plot_combined_metrics(metric_data, stability_data, output_path, time_mapping
                 ax.fill_between(x_vals, means - stds, means + stds, color=color, alpha=0.2)
 
         if xlabel == "Communication Rounds":
-            ax.set_xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight='bold')
+            ax.set_xlabel("Communication Rounds ($\\times 10^3$)", fontsize=font_size, weight="bold")
             format_round_ticks(ax, font_size)
         else:
-            ax.set_xlabel(xlabel, fontsize=font_size, weight='bold')
+            ax.set_xlabel(xlabel, fontsize=font_size, weight="bold")
 
-        ax.set_title(titles[metric], fontsize=font_size + 2, weight='bold')
-        ax.set_ylabel(ylabels[metric], fontsize=font_size, weight='bold')
+        ax.set_title(titles[metric], fontsize=font_size + 2, weight="bold")
+        ax.set_ylabel(ylabels[metric], fontsize=font_size, weight="bold")
         ax.tick_params(labelsize=font_size - 6, width=2)
         ax.grid(True)
 
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.05),
-               fontsize=font_size, ncol=len(labels))
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.05), fontsize=font_size, ncol=len(labels))
     plt.tight_layout(rect=[0, 0, 1, 0.92])
     ext = ".pdf" if export_as_pdf else ".png"
-    plt.savefig(output_path / f"combined_metrics{ext}", bbox_inches='tight')
+    plt.savefig(output_path / f"combined_metrics{ext}", bbox_inches="tight")
     plt.close()
 
 
@@ -275,6 +286,7 @@ def main():
 
     for algo_dir in algorithms:
         label = algo_dir.name
+        print(f"Processing {label}... and alg_dir: {algo_dir}")
         run_metrics_list = aggregate_algorithm_runs(algo_dir)
         if not run_metrics_list:
             continue
@@ -292,11 +304,15 @@ def main():
         total_bytes_data[label] = (mean_bytes, std_bytes)
         stability_data[label] = compute_stability(run_metrics_list, "test_acc")
 
-    for metric, data in all_metric_data.items():
-        plot_metric(data, metric, output_path, time_mappings, plot_over_time, export_as_pdf)
-    plot_stability(stability_data, output_path, export_as_pdf)
-    plot_combined_metrics(all_metric_data, stability_data, output_path, time_mappings, plot_over_time, export_as_pdf)
-    plot_bytes(total_bytes_data, output_path, time_mappings, plot_over_time, export_as_pdf)
+    export_options = [True, False]
+    for export_as_pdf in export_options:
+        for metric, data in all_metric_data.items():
+            plot_metric(data, metric, output_path, time_mappings, plot_over_time, export_as_pdf)
+        plot_stability(stability_data, output_path, export_as_pdf)
+        plot_combined_metrics(
+            all_metric_data, stability_data, output_path, time_mappings, plot_over_time, export_as_pdf
+        )
+        plot_bytes(total_bytes_data, output_path, time_mappings, plot_over_time, export_as_pdf)
 
     print(f"[DONE] All plots saved in {output_path.resolve()}")
 

@@ -26,7 +26,8 @@ import networkx as nx
 TMP_DIR = "./tmp/eval_weights"
 TOTAL_NODES = 100
 
-def wait_for_files(prefix, count, timeout=60):
+
+def wait_for_files(prefix, count, timeout=120):
     start = time.time()
     while True:
         files = glob.glob(f"{TMP_DIR}/{prefix}*")
@@ -55,6 +56,7 @@ def load_all_models(model_template):
         weights[uid] = m
     return weights
 
+
 def compute_global_model(all_models):
     state_dicts = [m.state_dict() for m in all_models.values()]
     global_state = {}
@@ -66,6 +68,7 @@ def compute_global_model(all_models):
     model = model_class()
     model.load_state_dict(global_state)
     return model
+
 
 def cosine_similarity_per_layer(model1, model2):
     similarities = []
@@ -83,6 +86,7 @@ def cosine_similarity_per_layer(model1, model2):
                 similarities.append(sim)
     return sum(similarities) / len(similarities) if similarities else 0.0
 
+
 def compute_similarity_to_global(uid, model_template):
     """
     Compute cosine similarity between local model of uid and global model.
@@ -95,16 +99,19 @@ def compute_similarity_to_global(uid, model_template):
     local_model = all_models[uid]
     return cosine_similarity_per_layer(local_model, global_model)
 
+
 def cleanup_if_ready(uid):
     if uid == 0:
         wait_for_files("done_", TOTAL_NODES)
         for f in glob.glob(f"{TMP_DIR}/*"):
             os.remove(f)
 
+
 def log_memory(prefix=""):
     process = psutil.Process(os.getpid())
     mem_mb = process.memory_info().rss / (1024 * 1024)  # Resident Set Size in MB
     logging.info(f"[{prefix}] Memory usage: {mem_mb:.2f} MB")
+
 
 class DissDL(Node):
     """
@@ -184,7 +191,6 @@ class DissDL(Node):
         self.similarity_cache[peer] = similarity
         return sum(sim_scores) / len(sim_scores)
 
-
     def estimate_similarity(self, peer, fallback):
         """
         Estimate similarity to a peer we haven't received weights from,
@@ -209,8 +215,6 @@ class DissDL(Node):
 
         return fallback
 
-
-
     def update_wanted_senders(self):
         if self.iteration == 0 or self.iteration % self.change_iter != 0:
             return
@@ -219,7 +223,8 @@ class DissDL(Node):
         candidate_senders = set(current_senders)
 
         possible_peers = {
-            p for p in self.known_nodes
+            p
+            for p in self.known_nodes
             if p != self.uid and self.connection_state.get(p, "NONE") in {"NONE", "ESTABLISHED"}
         }
 
@@ -232,8 +237,7 @@ class DissDL(Node):
             return
 
         fallback_sim = (
-            sum(self.similarity_cache.values()) / len(self.similarity_cache)
-            if self.similarity_cache else 0.0
+            sum(self.similarity_cache.values()) / len(self.similarity_cache) if self.similarity_cache else 0.0
         )
 
         # Add logic
@@ -262,7 +266,9 @@ class DissDL(Node):
         remove_probs = torch.nn.functional.softmax(self.beta * torch.tensor(values, dtype=torch.float32), dim=0).numpy()
         peer_to_remove = self.rng.choices(peer_ids, weights=remove_probs, k=1)[0]
         candidate_senders.remove(peer_to_remove)
-        logging.info(f"[Remove] {[(pid, round(-s, 4), round(p, 4)) for pid, s, p in zip(peer_ids, values, remove_probs)]}")
+        logging.info(
+            f"[Remove] {[(pid, round(-s, 4), round(p, 4)) for pid, s, p in zip(peer_ids, values, remove_probs)]}"
+        )
 
         self.wanted_senders = candidate_senders
         self.recent_peer_changes.append(peer_to_add)
@@ -274,19 +280,13 @@ class DissDL(Node):
         # Establish connections for new sender
         if peer_to_add not in self.connected_peers:
             self.communication.init_connection(peer_to_add)
-            self.communication.send(peer_to_add, {
-                "CHANNEL": "CONNECT",
-                "FROM": self.uid,
-                "MESSAGE": "SYN"
-            })
+            self.communication.send(peer_to_add, {"CHANNEL": "CONNECT", "FROM": self.uid, "MESSAGE": "SYN"})
             self.connection_state[peer_to_add] = "SYN_SENT"
             self.wanted_senders.discard(peer_to_add)
 
         logging.debug(
             f"Iteration {self.iteration}: added={peer_to_add}, removed={peer_to_remove}, wanted_senders={sorted(self.wanted_senders)}"
         )
-
-
 
     def receive_DPSGD(self):
         return self.receive_channel("DPSGD", block=True)
@@ -306,9 +306,9 @@ class DissDL(Node):
         """
         for k in waiting_for:
             if (
-                    (k not in self.peer_intents)
-                    or len(self.peer_intents[k]) == 0
-                    or self.peer_intents[k][0]["iteration"] != self.iteration
+                (k not in self.peer_intents)
+                or len(self.peer_intents[k]) == 0
+                or self.peer_intents[k][0]["iteration"] != self.iteration
             ):
                 return False
         return True
@@ -325,13 +325,12 @@ class DissDL(Node):
         """
         for k in self.wanted_senders:
             if (
-                    (k not in self.peer_payloads)
-                    or len(self.peer_payloads[k]) == 0
-                    or self.peer_payloads[k][0]["iteration"] != self.iteration
+                (k not in self.peer_payloads)
+                or len(self.peer_payloads[k]) == 0
+                or self.peer_payloads[k][0]["iteration"] != self.iteration
             ):
                 return False
         return True
-
 
     def connect_neighbors(self):
         """
@@ -358,23 +357,17 @@ class DissDL(Node):
         if not self.communication.already_connected(sender):
             self.communication.init_connection(sender)
 
-        self.communication.send(sender, {
-            "CHANNEL": "CONNECT",
-            "FROM": self.uid,
-            "MESSAGE": "SYN-ACK",
-            "iteration": self.iteration
-        })
+        self.communication.send(
+            sender, {"CHANNEL": "CONNECT", "FROM": self.uid, "MESSAGE": "SYN-ACK", "iteration": self.iteration}
+        )
         self.connection_state[sender] = "SYN_RECEIVED"
         self.partial_connections.add(sender)
 
     def _handle_syn_ack(self, sender, data):
         logging.debug(f"[{self.uid}] Received SYN-ACK from {sender}")
-        self.communication.send(sender, {
-            "CHANNEL": "CONNECT",
-            "FROM": self.uid,
-            "MESSAGE": "ACK",
-            "iteration": self.iteration
-        })
+        self.communication.send(
+            sender, {"CHANNEL": "CONNECT", "FROM": self.uid, "MESSAGE": "ACK", "iteration": self.iteration}
+        )
         logging.debug(f"[{self.uid}] Sent ACK to {sender}.")
         sender_iter = data.get("iteration", 0)
         if sender_iter <= self.iteration:
@@ -398,8 +391,6 @@ class DissDL(Node):
             # Delay establishment
             self.delayed_acks[sender] = sender_iter
 
-
-
     def run(self):
         logging.warning(f"[{self.uid}] Initial known_nodes: {self.known_nodes}")
         """
@@ -422,7 +413,6 @@ class DissDL(Node):
         with open(self.neighbor_log_file, "w") as f:
             f.write(f"# Neighbor log for node {self.uid}\n")
 
-
         logging.info("Total number of neighbor: {}".format(len(self.my_neighbors)))
 
         for iteration in range(self.iterations):
@@ -433,7 +423,9 @@ class DissDL(Node):
             for sender in list(self.peer_intents):
                 intents = self.peer_intents[sender]
                 while intents and intents[0]["iteration"] < iteration:
-                    logging.debug(f"Intent for {sender} for iteration {intents[0]['iteration']}, while in iteration {iteration}")
+                    logging.debug(
+                        f"Intent for {sender} for iteration {intents[0]['iteration']}, while in iteration {iteration}"
+                    )
                     intents.popleft()
                 if not intents:
                     del self.peer_intents[sender]
@@ -442,11 +434,12 @@ class DissDL(Node):
                 deque_x = self.peer_payloads[sender]
                 # Drop stale messages (older than current iteration)
                 while deque_x and deque_x[0]["iteration"] < iteration:
-                    logging.debug(f"Payload for {sender} for iteration {deque_x[0]['iteration']}, while in iteration {iteration}")
+                    logging.debug(
+                        f"Payload for {sender} for iteration {deque_x[0]['iteration']}, while in iteration {iteration}"
+                    )
                     deque_x.popleft()
                 if not deque_x:
                     del self.peer_payloads[sender]
-
 
             # Refresh nodes_requesting_from_me from stored intents
             self.nodes_requesting_from_me.clear()
@@ -480,9 +473,10 @@ class DissDL(Node):
                     self.connection_state[peer] = "ESTABLISHED"
                     self.connected_peers.add(peer)
                     self.wanted_senders.add(peer)
-                    logging.debug(f"[{self.uid}] Finalized SYN-ACK connection with {peer} at iteration {self.iteration}")
+                    logging.debug(
+                        f"[{self.uid}] Finalized SYN-ACK connection with {peer} at iteration {self.iteration}"
+                    )
                     del self.delayed_syn_acks[peer]
-
 
             # Accept a_new dynamic connections
             while True:
@@ -498,7 +492,7 @@ class DissDL(Node):
                 elif message == "ACK":
                     self._handle_ack(sender, data)
                 else:
-                    logging.warning(F"Unrecognised MESSAGE for CONNECT: {message}")
+                    logging.warning(f"Unrecognised MESSAGE for CONNECT: {message}")
 
             self.trainer.train(self.dataset)
 
@@ -507,11 +501,14 @@ class DissDL(Node):
 
             # Inform all known peers whether we are requesting data from them
             for peer in self.connected_peers | self.partial_connections:
-                self.communication.send(peer, {
-                    "CHANNEL": "DPSGD_REQ",
-                    "iteration": self.iteration,
-                    "want": peer in self.wanted_senders,
-                })
+                self.communication.send(
+                    peer,
+                    {
+                        "CHANNEL": "DPSGD_REQ",
+                        "iteration": self.iteration,
+                        "want": peer in self.wanted_senders,
+                    },
+                )
 
             # Wait to receive request/intent messages from all neighbors
             logging.debug(f"[{self.uid}] Waiting for DPSGD_REQ from known nodes: {self.known_nodes}")
@@ -546,10 +543,7 @@ class DissDL(Node):
             known_similarities = {
                 p: self.similarity_cache[p]
                 for p in self.known_nodes
-                if (
-                        p in self.similarity_cache and
-                        self.similarity_cache[p] != 0
-                )
+                if (p in self.similarity_cache and self.similarity_cache[p] != 0)
             }
             to_send = self.sharing.get_data_to_send(degree=len(self.nodes_requesting_from_me))
             to_send["CHANNEL"] = "DPSGD"
@@ -593,9 +587,7 @@ class DissDL(Node):
                             sim_map = data.get("known_similarities", {})
                             for target_peer, sim in sim_map.items():
                                 if target_peer not in self.has_real_model:
-                                    self.sim_estimates_per_peer[target_peer].append(
-                                        (self.iteration, sender, sim)
-                                    )
+                                    self.sim_estimates_per_peer[target_peer].append((self.iteration, sender, sim))
                         continue
                     elif data["iteration"] < self.iteration:
                         continue
@@ -605,9 +597,7 @@ class DissDL(Node):
                             sim_map = data.get("known_similarities", {})
                             for target_peer, sim in sim_map.items():
                                 if target_peer not in self.has_real_model:
-                                    self.sim_estimates_per_peer[target_peer].append(
-                                        (self.iteration, sender, sim)
-                                    )
+                                    self.sim_estimates_per_peer[target_peer].append((self.iteration, sender, sim))
 
             averaging_deque = dict()
             atleast_one = False
@@ -618,20 +608,12 @@ class DissDL(Node):
 
                 if len(deque_x) > 0:
                     this_message = deque_x[0]
-                    if (
-                            this_message["iteration"] == self.iteration
-                            and "NotWorking" not in this_message
-                    ):
+                    if this_message["iteration"] == self.iteration and "NotWorking" not in this_message:
                         averaging_deque[x] = deque_x
                         atleast_one = True
                     elif this_message["iteration"] == self.iteration:
                         deque_x.popleft()
-                        logging.debug(
-                            "Discarding message from {} of iteration {}".format(
-                                x, this_message["iteration"]
-                            )
-                        )
-
+                        logging.debug("Discarding message from {} of iteration {}".format(x, this_message["iteration"]))
 
             if atleast_one:
                 self.sharing._averaging(averaging_deque)
@@ -646,8 +628,8 @@ class DissDL(Node):
 
             if iteration:
                 with open(
-                        os.path.join(self.log_dir, "{}_results.json".format(self.rank)),
-                        "r",
+                    os.path.join(self.log_dir, "{}_results.json".format(self.rank)),
+                    "r",
                 ) as inf:
                     results_dict = json.load(inf)
             else:
@@ -664,20 +646,13 @@ class DissDL(Node):
             results_dict["total_bytes"][iteration + 1] = self.communication.total_bytes
 
             if hasattr(self.communication, "total_meta"):
-                results_dict["total_meta"][
-                    iteration + 1
-                    ] = self.communication.total_meta
+                results_dict["total_meta"][iteration + 1] = self.communication.total_meta
             if hasattr(self.communication, "total_data"):
-                results_dict["total_data_per_n"][
-                    iteration + 1
-                    ] = self.communication.total_data
+                results_dict["total_data_per_n"][iteration + 1] = self.communication.total_data
             if hasattr(self.communication, "received_this_round"):
-                results_dict["received_this_round"][
-                    iteration + 1
-                    ] = self.communication.received_this_round
+                results_dict["received_this_round"][iteration + 1] = self.communication.received_this_round
 
             if rounds_to_train_evaluate == 0:
-
 
                 logging.info("Evaluating on train set.")
                 rounds_to_train_evaluate = self.train_evaluate_after * change
@@ -699,7 +674,9 @@ class DissDL(Node):
                 model_template = lambda: model_class()
                 similarity_to_global = compute_similarity_to_global(self.uid, model_template)
                 self.local_dissim_scores[iteration] = similarity_to_global
-                logging.info(f"[{self.uid}] Iter {iteration} | Cosine similarity to global model: {similarity_to_global:.4f}")
+                logging.info(
+                    f"[{self.uid}] Iter {iteration} | Cosine similarity to global model: {similarity_to_global:.4f}"
+                )
 
                 write_done(self.uid)
                 cleanup_if_ready(self.uid)
@@ -715,9 +692,7 @@ class DissDL(Node):
 
                 global_epoch += change
 
-            with open(
-                    os.path.join(self.log_dir, "{}_results.json".format(self.rank)), "w"
-            ) as of:
+            with open(os.path.join(self.log_dir, "{}_results.json".format(self.rank)), "w") as of:
                 json.dump(results_dict, of)
 
             # with open(self.neighbor_log_file, "a") as f:
@@ -731,9 +706,7 @@ class DissDL(Node):
             #     torch.cuda.empty_cache()
 
         with open(os.path.join(self.log_dir, f"{self.rank}_dissim_scores.json"), "w") as f:
-            json.dump({
-                "local": self.local_dissim_scores
-            }, f)
+            json.dump({"local": self.local_dissim_scores}, f)
 
         self.disconnect_neighbors()
         logging.info("Storing final weight")
@@ -741,17 +714,17 @@ class DissDL(Node):
         logging.info("All neighbors disconnected. Process complete!")
 
     def cache_fields(
-            self,
-            rank,
-            machine_id,
-            mapping,
-            graph,
-            iterations,
-            log_dir,
-            weights_store_dir,
-            test_after,
-            train_evaluate_after,
-            reset_optimizer,
+        self,
+        rank,
+        machine_id,
+        mapping,
+        graph,
+        iterations,
+        log_dir,
+        weights_store_dir,
+        test_after,
+        train_evaluate_after,
+        reset_optimizer,
     ):
         """
         Instantiate object field with arguments.
@@ -810,26 +783,23 @@ class DissDL(Node):
         comm_class = getattr(comm_module, comm_configs["comm_class"])
         comm_params = utils.remove_keys(comm_configs, ["comm_package", "comm_class"])
         self.addresses_filepath = comm_params.get("addresses_filepath", None)
-        self.communication = comm_class(
-            self.rank, self.machine_id, self.mapping, self.graph.n_procs, **comm_params
-        )
-
+        self.communication = comm_class(self.rank, self.machine_id, self.mapping, self.graph.n_procs, **comm_params)
 
     def instantiate(
-            self,
-            rank: int,
-            machine_id: int,
-            mapping: Mapping,
-            graph: Graph,
-            config,
-            iterations=1,
-            log_dir=".",
-            weights_store_dir=".",
-            log_level=logging.INFO,
-            test_after=5,
-            train_evaluate_after=1,
-            reset_optimizer=1,
-            *args
+        self,
+        rank: int,
+        machine_id: int,
+        mapping: Mapping,
+        graph: Graph,
+        config,
+        iterations=1,
+        log_dir=".",
+        weights_store_dir=".",
+        log_level=logging.INFO,
+        test_after=5,
+        train_evaluate_after=1,
+        reset_optimizer=1,
+        *args,
     ):
         """
         Construct objects.
@@ -907,8 +877,8 @@ class DissDL(Node):
         self.known_nodes = set(self.my_neighbors)
 
         self.init_sharing(config["SHARING"], self.device)
-        self.peer_intents = dict()      # For DPSGD_REQ messages
-        self.peer_payloads = dict()     # For DPSGD model payloads
+        self.peer_intents = dict()  # For DPSGD_REQ messages
+        self.peer_payloads = dict()  # For DPSGD model payloads
 
         self.similarity_cache = dict()  # {peer_id: similarity_value}
         self.sim_estimates_per_peer = defaultdict(lambda: deque(maxlen=5))
@@ -917,25 +887,25 @@ class DissDL(Node):
         self.delayed_acks = dict()
         self.delayed_syn_acks = dict()
 
-        self.local_dissim_scores = {}   # iteration -> float
+        self.local_dissim_scores = {}  # iteration -> float
 
         self.connect_neighbors()
 
     def __init__(
-            self,
-            rank: int,
-            machine_id: int,
-            mapping: Mapping,
-            graph: Graph,
-            config,
-            iterations=1,
-            log_dir=".",
-            weights_store_dir=".",
-            log_level=logging.INFO,
-            test_after=5,
-            train_evaluate_after=1,
-            reset_optimizer=1,
-            *args
+        self,
+        rank: int,
+        machine_id: int,
+        mapping: Mapping,
+        graph: Graph,
+        config,
+        iterations=1,
+        log_dir=".",
+        weights_store_dir=".",
+        log_level=logging.INFO,
+        test_after=5,
+        train_evaluate_after=1,
+        reset_optimizer=1,
+        *args,
     ):
         """
         Constructor
@@ -984,9 +954,7 @@ class DissDL(Node):
         """
 
         total_threads = os.cpu_count()
-        self.threads_per_proc = max(
-            math.floor(total_threads / mapping.procs_per_machine), 1
-        )
+        self.threads_per_proc = max(math.floor(total_threads / mapping.procs_per_machine), 1)
         torch.set_num_threads(self.threads_per_proc)
         # torch.set_num_threads(1)
 
@@ -1009,18 +977,14 @@ class DissDL(Node):
             test_after,
             train_evaluate_after,
             reset_optimizer,
-            *args
+            *args,
         )
 
         nodeConfigs = config["VARS"]
-        self.change_iter = (
-            nodeConfigs["change_topology_iter"] if "change_topology_iter" in nodeConfigs else 5
-        )
+        self.change_iter = nodeConfigs["change_topology_iter"] if "change_topology_iter" in nodeConfigs else 5
         self.beta = float(nodeConfigs["beta"]) if "beta" in nodeConfigs else 1.0
 
         self.model.to(self.device)
 
-        logging.debug(
-            "Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads
-        )
+        logging.debug("Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads)
         self.run()

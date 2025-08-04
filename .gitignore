@@ -16,3 +16,13 @@ eval/graphs**
 build
 venv
 interp
+eval
+eval_remote
+eval_remote_backup
+tutorial/**/*.png
+out.png
+out.edges
+96_regular.edges
+96_regular.png
+regular_100_3.edges
+regular_100_3.png

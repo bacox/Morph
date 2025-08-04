@@ -93,7 +93,10 @@ class Training:
         trainset = dataset.get_trainset(self.batch_size, self.shuffle)
         epoch_loss = 0.0
         count = 0
+        num_samples = len(trainset.dataset)
+        num_counted = 0
         with torch.no_grad():
+
             for data, target in trainset:
 
                 data = data.to(self.device)
@@ -103,8 +106,11 @@ class Training:
                 loss_val = self.loss(output, target)
                 epoch_loss += loss_val.item()
                 count += 1
+                num_counted += len(data)
         loss = epoch_loss / count
         logging.info("Loss after iteration: {}".format(loss))
+        logging.info("Number of samples counted: {}".format(num_counted))
+        logging.info("Total number of samples from dataset: {}".format(num_samples))
         return loss
 
     def eval_loss_from_loader(self, loader):
@@ -137,7 +143,6 @@ class Training:
         loss = epoch_loss / count if count > 0 else float("inf")
         logging.info("Validation loss after iteration: {}".format(loss))
         return loss
-
 
     def eval_loss_and_accuracy_from_loader(self, loader):
         """
@@ -218,11 +223,7 @@ class Training:
             epoch_loss = 0.0
             count = 0
             for data, target in trainset:
-                logging.debug(
-                    "Starting minibatch {} with num_samples: {}".format(
-                        count, len(data)
-                    )
-                )
+                logging.debug("Starting minibatch {} with num_samples: {}".format(count, len(data)))
                 logging.debug("Classes: {}".format(target))
                 epoch_loss += self.trainstep(data, target)
                 count += 1

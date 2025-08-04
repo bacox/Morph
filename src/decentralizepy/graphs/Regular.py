@@ -22,11 +22,14 @@ class Regular(Graph):
 
         """
         super().__init__(n_procs)
+        print(f"Generating Regular graph with {n_procs} nodes and degree {degree} and seed {seed}")
         G = nx.random_regular_graph(degree, n_procs, seed)
         adj = G.adjacency()
         for i, l in adj:
             self.adj_list[i] = set()  # a_new set
             for k in l:
                 self.adj_list[i].add(k)
+                self.__insert_edge__(i, k)
         if not nx.is_connected(G):
+            # raise ValueError("The generated graph is not connected.")
             self.connect_graph()

@@ -48,7 +48,10 @@ class EL_Local(Node):
         plt.savefig(filename)
 
     def get_neighbors(self, node=None):
-        return set(self.rng.sample(self.my_neighbors, self.degree))
+        # print(f"Degree: {self.degree=}")
+        # print(f"Requesting neighbors {self.my_neighbors=}.")
+
+        return set(self.rng.sample(list(self.my_neighbors), self.degree))
 
     def receive_DPSGD(self):
         return self.receive_channel("DPSGD", block=True)
@@ -145,19 +148,12 @@ class EL_Local(Node):
             for x in self.my_neighbors:
                 if x in self.peer_deques and len(self.peer_deques[x]) > 0:
                     this_message = self.peer_deques[x][0]
-                    if (
-                        this_message["iteration"] == self.iteration
-                        and "NotWorking" not in this_message
-                    ):
+                    if this_message["iteration"] == self.iteration and "NotWorking" not in this_message:
                         averaging_deque[x] = self.peer_deques[x]
                         atleast_one = True
                     elif this_message["iteration"] == self.iteration:
                         self.peer_deques[x].popleft()
-                        logging.debug(
-                            "Discarding message from {} of iteration {}".format(
-                                x, this_message["iteration"]
-                            )
-                        )
+                        logging.debug("Discarding message from {} of iteration {}".format(x, this_message["iteration"]))
 
             if atleast_one:
                 self.sharing._averaging(averaging_deque)
@@ -190,17 +186,11 @@ class EL_Local(Node):
             results_dict["total_bytes"][iteration + 1] = self.communication.total_bytes
 
             if hasattr(self.communication, "total_meta"):
-                results_dict["total_meta"][
-                    iteration + 1
-                ] = self.communication.total_meta
+                results_dict["total_meta"][iteration + 1] = self.communication.total_meta
             if hasattr(self.communication, "total_data"):
-                results_dict["total_data_per_n"][
-                    iteration + 1
-                ] = self.communication.total_data
+                results_dict["total_data_per_n"][iteration + 1] = self.communication.total_data
             if hasattr(self.communication, "received_this_round"):
-                results_dict["received_this_round"][
-                    iteration + 1
-                ] = self.communication.received_this_round
+                results_dict["received_this_round"][iteration + 1] = self.communication.received_this_round
 
             if rounds_to_train_evaluate == 0:
                 logging.info("Evaluating on train set.")
@@ -227,9 +217,7 @@ class EL_Local(Node):
 
                 global_epoch += change
 
-            with open(
-                os.path.join(self.log_dir, "{}_results.json".format(self.rank)), "w"
-            ) as of:
+            with open(os.path.join(self.log_dir, "{}_results.json".format(self.rank)), "w") as of:
                 json.dump(results_dict, of)
 
         self.disconnect_neighbors()
@@ -307,9 +295,7 @@ class EL_Local(Node):
         comm_class = getattr(comm_module, comm_configs["comm_class"])
         comm_params = utils.remove_keys(comm_configs, ["comm_package", "comm_class"])
         self.addresses_filepath = comm_params.get("addresses_filepath", None)
-        self.communication = comm_class(
-            self.rank, self.machine_id, self.mapping, self.graph.n_procs, **comm_params
-        )
+        self.communication = comm_class(self.rank, self.machine_id, self.mapping, self.graph.n_procs, **comm_params)
 
     def instantiate(
         self,
@@ -325,7 +311,7 @@ class EL_Local(Node):
         test_after=5,
         train_evaluate_after=1,
         reset_optimizer=1,
-        *args
+        *args,
     ):
         """
         Construct objects.
@@ -404,7 +390,7 @@ class EL_Local(Node):
         test_after=5,
         train_evaluate_after=1,
         reset_optimizer=1,
-        *args
+        *args,
     ):
         """
         Constructor
@@ -453,9 +439,7 @@ class EL_Local(Node):
         """
 
         total_threads = os.cpu_count()
-        self.threads_per_proc = max(
-            math.floor(total_threads / mapping.procs_per_machine), 1
-        )
+        self.threads_per_proc = max(math.floor(total_threads / mapping.procs_per_machine), 1)
         torch.set_num_threads(self.threads_per_proc)
         torch.set_num_interop_threads(1)
         cuda_enabled = config.get("CUDA", {}).get("use_cuda", False)
@@ -474,17 +458,13 @@ class EL_Local(Node):
             test_after,
             train_evaluate_after,
             reset_optimizer,
-            *args
+            *args,
         )
 
         nodeConfigs = config["NODE"]
-        self.degree = (
-            nodeConfigs["graph_degree"] if "graph_degree" in nodeConfigs else 2
-        )
+        self.degree = nodeConfigs["graph_degree"] if "graph_degree" in nodeConfigs else 2
 
         self.model.to(self.device)
 
-        logging.info(
-            "Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads
-        )
+        logging.info("Each proc uses %d threads out of %d.", self.threads_per_proc, total_threads)
         self.run()
