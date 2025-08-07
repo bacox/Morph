@@ -20,8 +20,12 @@ fi
 
 decpy_path=../../eval
 # graph=regular_100_3.edges
-graph=fully-connected_100.edges
-procs_per_machine=100
+# graph=fully-connected_100.edges
+# graph=regular_100_7.edges
+# graph=regular_100_14.edges
+# graph=regular_200_3.edges
+graph=regular_50_3.edges
+procs_per_machine=50
 run_path=../../eval/data
 env_python=python
 machines=1

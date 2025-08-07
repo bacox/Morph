@@ -123,6 +123,7 @@ def analyze_folder(base_path_str):
 
     output_file = base_path / "evaluation_summary.json"
     with open(output_file, "w") as f:
+        print(f"Writing output to {output_file}")
         json.dump(output, f, indent=2)
 
     return output_file

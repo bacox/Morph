@@ -12,7 +12,11 @@ fi
 
 decpy_path=../../eval # Path to eval folder
 # graph=regular_100_3.edges # Absolute path of the graph file generated using the generate_graph.py script
-graph=fully-connected_100.edges
+# graph=fully-connected_100.edges
+# graph=regular_100_7.edges
+# graph=regular_100_14.edges
+# graph=regular_200_3.edges
+graph=regular_50_3.edges
 run_path=../../eval/data # Path to the folder where the graph and config file will be copied and the results will be stored
 config_file=config_static.ini
 cp $graph $config_file $run_path
@@ -27,7 +31,7 @@ log_level=INFO # DEBUG | INFO | WARN | CRITICAL
 m=0 # machine id corresponding consistent with ip.json
 echo M is $m
 
-procs_per_machine=100 # 16 processes on 1 machine
+procs_per_machine=50 # 16 processes on 1 machine
 echo procs per machine is $procs_per_machine
 
 config_base=$(basename "$config_file" .ini)

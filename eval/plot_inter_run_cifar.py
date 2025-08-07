@@ -10,8 +10,22 @@ plot_over_time = False
 
 # Change folder for different experiment or set export_as_pdf to False for exporting in png
 export_as_pdf = True
-base_dir = Path("data/experiments/cifar/degree_3")
-base_dir = Path("../eval_remote/st1/data/nca/CIFAR10/regular_100_3")
+# base_dir = Path("data/experiments/cifar/degree_3")
+# base_dir = Path("../eval_remote/st1/data/nca/CIFAR10/regular_100_3")
+base_dirs = [
+    Path("../eval_remote/st1/data/nca/CIFAR10/fully-connected_100"),
+    Path("../eval_remote/st3/data/nca/CIFAR10/fully-connected_100"),
+]
+
+base_dirs = [
+    Path("../eval_remote/st1/data/nca/CIFAR10/regular_100_7"),
+    Path("../eval_remote/st3/data/nca/CIFAR10/regular_100_7"),
+]
+
+# base_dirs = [
+#     Path("../eval_remote/st1/data/nca/CIFAR10/regular_100_14"),
+#     Path("../eval_remote/st3/data/nca/CIFAR10/regular_100_14"),
+# ]
 
 # style_map = {
 #     "diss_dl": {"label": "DissDL", "color": "#d62728", "linestyle": "-"},
@@ -107,7 +121,7 @@ def format_round_ticks(ax, fontsize):
 
 def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_time, export_as_pdf):
     plt.figure(figsize=(8, 6))
-    font_size = 28
+    font_size = 28 / 2
     for label, (mean_dict, std_dict) in metric_data.items():
         config = style_map.get(label, {"label": label, "color": "gray", "linestyle": "-"})
         label_clean = config["label"]
@@ -138,7 +152,8 @@ def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_
     plt.title(f"{metric_name.replace('_', ' ').title()} (Mean ± Std)", fontsize=font_size + 2, weight="bold")
     plt.legend(fontsize=font_size - 6)
     plt.grid(True, color="#cccccc", linewidth=0.8)
-    plt.tight_layout(pad=3)
+    # plt.tight_layout(pad=3)
+    plt.tight_layout()
     plt.tick_params(labelsize=font_size - 6, width=2)
 
     fname = f"{metric_name}_time" if plot_over_time else metric_name
@@ -149,7 +164,7 @@ def plot_metric(metric_data, metric_name, output_path, time_mappings, plot_over_
 
 def plot_stability(stability_data, output_path, export_as_pdf):
     plt.figure(figsize=(8, 6))
-    font_size = 28
+    font_size = 28 / 2
     ax = plt.gca()
     for label, stability in stability_data.items():
         rounds = sorted(stability.keys())
@@ -166,7 +181,7 @@ def plot_stability(stability_data, output_path, export_as_pdf):
     ax.legend(fontsize=font_size - 6)
     ax.grid(True, color="#cccccc", linewidth=0.8)
     ax.tick_params(labelsize=font_size - 6, width=2)
-    plt.tight_layout(pad=3)
+    plt.tight_layout()
     ext = ".pdf" if export_as_pdf else ".png"
     plt.savefig(output_path / f"stability{ext}", bbox_inches="tight")
     plt.close()
@@ -174,7 +189,7 @@ def plot_stability(stability_data, output_path, export_as_pdf):
 
 def plot_bytes(metric_data, output_path, time_mappings, plot_over_time, export_as_pdf):
     plt.figure(figsize=(8, 6))
-    font_size = 28
+    font_size = 28 / 2
     for label, (mean_dict, std_dict) in metric_data.items():
         config = style_map.get(label, {"label": label, "color": "gray", "linestyle": "-"})
         label_clean = config["label"]
@@ -202,7 +217,7 @@ def plot_bytes(metric_data, output_path, time_mappings, plot_over_time, export_a
         plt.xlabel(xlabel, fontsize=font_size, weight="bold")
 
     plt.ylabel("Bytes Sent", fontsize=font_size, weight="bold")
-    plt.title("Mean Communication Cost", fontsize=font_size + 2, weight="bold")
+    # plt.title("Mean Communication Cost", fontsize=font_size + 2, weight="bold")
     plt.legend(fontsize=font_size - 6)
     plt.grid(True, color="#cccccc", linewidth=0.8)
     plt.tight_layout()
@@ -266,6 +281,7 @@ def plot_combined_metrics(metric_data, stability_data, output_path, time_mapping
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.05), fontsize=font_size, ncol=len(labels))
     plt.tight_layout(rect=[0, 0, 1, 0.92])
+    # plt.tight_layout()
     ext = ".pdf" if export_as_pdf else ".png"
     plt.savefig(output_path / f"combined_metrics{ext}", bbox_inches="tight")
     plt.close()
@@ -276,7 +292,17 @@ def main():
     output_path = Path("graphs") / timestamp
     output_path.mkdir(parents=True, exist_ok=True)
 
-    algorithms = [f for f in base_dir.iterdir() if f.is_dir()]
+    algorithms = []
+
+    for base_dir in base_dirs:
+        if not base_dir.exists():
+            print(f"Base directory {base_dir} does not exist. Skipping...")
+            continue
+        algorithms.extend([f for f in base_dir.iterdir() if f.is_dir()])
+
+    # directories  = [f for f in base_dir if f.is_dir() ]
+
+    # algorithms = [f for f in base_dir.iterdir() if f.is_dir()]
     metrics_to_plot = ["test_acc", "test_loss"]
 
     all_metric_data = {m: {} for m in metrics_to_plot}
