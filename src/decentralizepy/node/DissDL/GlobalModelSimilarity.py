@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 
 from decentralizepy import utils
 from decentralizepy.graphs.Graph import Graph
+from decentralizepy.mappings.Linear import Linear
 from decentralizepy.mappings.Mapping import Mapping
 from decentralizepy.node.Node import Node
 
@@ -24,7 +25,6 @@ import networkx as nx
 
 
 TMP_DIR = "./tmp/eval_weights"
-TOTAL_NODES = 100
 
 
 def wait_for_files(prefix, count, timeout=120):
@@ -100,9 +100,10 @@ def compute_similarity_to_global(uid, model_template):
     return cosine_similarity_per_layer(local_model, global_model)
 
 
-def cleanup_if_ready(uid):
+def cleanup_if_ready(uid, total_nodes):
     if uid == 0:
-        wait_for_files("done_", TOTAL_NODES)
+        # wait_for_files("done_", TOTAL_NODES)
+        wait_for_files("done_", total_nodes)
         for f in glob.glob(f"{TMP_DIR}/*"):
             os.remove(f)
 
@@ -667,8 +668,10 @@ class DissDL(Node):
                 # )
 
             if self.dataset.__testing__ and rounds_to_test == 0:
+                assert isinstance(self.mapping, Linear), "Mapping must be an instance of Linear"
+                total_nodes = self.mapping.total_procs
                 save_model(self.uid, self.model)
-                wait_for_files("weights_", TOTAL_NODES)
+                wait_for_files("weights_", total_nodes)
 
                 model_class = type(self.model)
                 model_template = lambda: model_class()
@@ -679,7 +682,7 @@ class DissDL(Node):
                 )
 
                 write_done(self.uid)
-                cleanup_if_ready(self.uid)
+                cleanup_if_ready(self.uid, total_nodes)
 
                 rounds_to_test = self.test_after * change
                 logging.info("Evaluating on test set.")

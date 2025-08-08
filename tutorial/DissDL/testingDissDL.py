@@ -66,16 +66,28 @@ if __name__ == "__main__":
     l = Linear(n_machines, procs_per_machine)
     m_id = args.machine_id
 
+    print(
+        f"Machine ID: {m_id}, Processes per machine: {procs_per_machine}"
+        f", Global service machine: {l.global_service_machine}, "
+        f"Current machine: {l.current_machine}"
+    )
+
+    print(f"Linear mapping: {l.total_procs}")
+    print(
+        f"n_machines: {n_machines}, procs_per_machine: {procs_per_machine} && total = {n_machines * procs_per_machine}"
+    )
+    exit()
+
     processes = []
     for r in range(procs_per_machine):
         processes.append(
             mp.Process(
                 target=target_class,
                 args=[
-                    r,
-                    m_id,
-                    l,
-                    g,
+                    r,  # process id
+                    m_id,  # machine id
+                    l,  # mapping
+                    g,  # graph
                     my_config,
                     args.iterations,
                     args.log_dir,

@@ -3,8 +3,8 @@
 # Remote path where the code should be synced
 REMOTE_PATH="topology-decl"
 # Remote hosts
-HOSTS=("st3")
-# HOSTS=("st1" "st3")
+# HOSTS=("st3")
+HOSTS=("st1" "st3")
 
 # Build rsync include/exclude rules from .gitignore
 RSYNC_EXCLUDES=$(git ls-files --others --ignored --exclude-standard --directory)

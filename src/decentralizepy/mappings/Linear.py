@@ -8,9 +8,7 @@ class Linear(Mapping):
 
     """
 
-    def __init__(
-        self, n_machines, procs_per_machine, global_service_machine=0, current_machine=0
-    ):
+    def __init__(self, n_machines, procs_per_machine, global_service_machine=0, current_machine=0):
         """
         Constructor
 
@@ -31,6 +29,7 @@ class Linear(Mapping):
         self.procs_per_machine = procs_per_machine
         self.global_service_machine = global_service_machine
         self.current_machine = current_machine
+        self.total_procs = n_machines * procs_per_machine
 
     def get_uid(self, rank: int, machine_id: int):
         """
