@@ -1,4 +1,4 @@
-# DissDL: Decentralized Learning with Dissimilarity-Driven Peer Selection
+# Moprh: Decentralized Learning with Dissimilarity-Driven Peer Selection
 
 This repository contains code for a decentralized learning framework
 where nodes adaptively select peers based on model and data
