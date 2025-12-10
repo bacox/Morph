@@ -209,18 +209,6 @@ generating plots.
 
     where `{experiment_type}` is either `model` or `data_distribution`.
 
-## Reproducing Evaluation Results
-
-To reproduce the evaluation plots, you can download the folder
-containing all experiment outputs (with the correct directory structure)
-from the following link:
-
-> <https://tud365-my.sharepoint.com/personal/bartcox_tudelft_nl/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fbartcox%5Ftudelft%5Fnl%2FDocuments%2FCSE3000%20%2D%202025%20Data%2FAntreas%20Ioannou>
-
-Once downloaded, unzip the contents and place them inside the
-`eval/data` directory. This will ensure compatibility with the provided
-evaluation scripts.
-
 # Enabling GPU Usage
 
 To enable GPU acceleration, add the following to your configuration file
