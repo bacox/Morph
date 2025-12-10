@@ -72,10 +72,10 @@ if __name__ == "__main__":
             mp.Process(
                 target=target_class,
                 args=[
-                    r,
-                    m_id,
-                    l,
-                    g,
+                    r,  # process id
+                    m_id,  # machine id
+                    l,  # mapping
+                    g,  # graph
                     my_config,
                     args.iterations,
                     args.log_dir,
