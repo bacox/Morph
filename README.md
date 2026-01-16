@@ -131,7 +131,7 @@ Navigate to the experiment directory and run:
 
 ``` bash
 cd tutorial/DissDL
-./run.sh
+bash run.sh
 ```
 
 Inside `run.sh`, you can:
@@ -143,6 +143,16 @@ Inside `run.sh`, you can:
     -   `GlobalModelSimilarity.py` – model similarity
     -   `GlobalDataSimilarity.py` – data distribution similarity
 
+### Example
+
+To run a single server example experiment run the following:
+```bash
+cd tutorial/DissDL
+bash run_small.sh
+```
+
+The data is logged in the folder `eval/data/<timestamp>`.
+This is smaller experiment of 8 nodes that easily should run on a single server.
 ## Experimental Types
 
 1.  **Main Algorithm Evaluation**
